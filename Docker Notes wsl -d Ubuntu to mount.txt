@@ -1,0 +1,26 @@
+Docker Notes wsl -d Ubuntu to mount home drive on WSL
+
+
+Running first Container
+
+docker pull nginx
+docker run -d nginx
+docker run -d -p 8080:80 --name web-server nginx --- Mapping local and container ports
+docker stop web-server-- to restart same container again command = docker start web-server
+
+
+ First Project:
+Run a Docker container based on the NGNX image with the specific tag 1.27.0.
+Access an interactive shell within your running NGNX container.
+Install a text editor of your choice (like VIM).
+Modify the /usr/share/nginx/html/index.html file to deliver your custom content.
+
+
+1. docker pull nginx:1.27.0
+2. docker run -d -p 8080:80 --name web-server2 nginx:1.27.0
+3. docker exec -it web-server2 bash
+4. run apt-get update
+5. apt-get install nano -y
+6. cd usr/share/nginx/html/index.html
+7. Save file and go to localhost:8080
+
