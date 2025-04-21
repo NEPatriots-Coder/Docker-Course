@@ -9,7 +9,7 @@ variable "aws_account_id" {
 }
 
 variable "app_name" {
-  description = "Docker Application with ELB and Auto Scaling"
+  description = "Name of the application"
   default     = "ecommerce-app"
 }
 
@@ -133,19 +133,30 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 locals {
   user_data = <<-EOF
     #!/bin/bash
+    # Update system packages
     sudo yum update -y
+    
+    # Install and start Docker
     sudo yum install docker -y
     sudo service docker start
     sudo usermod -a -G docker ec2-user
+    
+    # Authenticate with ECR
     aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${var.aws_account_id}.dkr.ecr.us-east-1.amazonaws.com
+    
+    # Pull and run the container
+    docker pull ${var.aws_account_id}.dkr.ecr.us-east-1.amazonaws.com/${var.ecr_repo_name}:latest
     docker run -d -p ${var.app_port}:${var.app_port} ${var.aws_account_id}.dkr.ecr.us-east-1.amazonaws.com/${var.ecr_repo_name}:latest
+    
+    # Verify the container is running
+    docker ps
   EOF
 }
 
 # Launch Template
 resource "aws_launch_template" "app" {
   name_prefix   = "${var.app_name}-"
-  image_id      = "ami-0230bd60aa48260c6" # Amazon Linux 2 AMI - replace with your region's AMI
+  image_id      = "ami-0230bd60aa48260c6"  # Amazon Linux 2 AMI - replace with your region's AMI
   instance_type = var.instance_type
   user_data     = base64encode(local.user_data)
 
@@ -253,7 +264,7 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu" {
   statistic           = "Average"
   threshold           = 80
   alarm_description   = "This alarm monitors EC2 high CPU utilization"
-
+  
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.app.name
   }
